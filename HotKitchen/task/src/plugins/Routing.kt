@@ -13,6 +13,7 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -27,47 +28,52 @@ fun Application.configureRouting() {
     val json = Json { prettyPrint = true }
 
     Database.connect(
-        "jdbc:postgresql://localhost:5432/hotkitchen",
+        url = "jdbc:postgresql://localhost:5432/hotkitchen",
         driver = "org.postgresql.Driver",
         user = "postgres",
         password = "1111"
     )
 
     transaction {
-        SchemaUtils.create(ApiUser, UserProfile, MealTable, CategoryTable, OrderTable)
+        SchemaUtils.create(
+            ApiUser,
+            UserProfile,
+            MealTable,
+            CategoryTable,
+            OrderTable
+        )
     }
 
     routing {
         post("/signup") {
             val contentType = call.request.contentType()
             println("Content type of the request: $contentType")
-            val signUpRequest = when {
-                contentType.match(ContentType.Application.Json) -> {
-                    println("Found JSON")
-
-                    val requestBody = call.receive<String>()
-                    println("Request Body: $requestBody")
-
-                    try {
-                        Json.decodeFromString<SignUpRequest>(requestBody)
-                    } catch (e: UnsupportedMediaTypeException) {
-                        println("Unsupported media type for JSON: ${e.message}")
-                        null
-                    } catch (e: Throwable) {
-                        println("Error parsing JSON request: ${e.message}")
-                        null
+            val signUpRequest =
+                when {
+                    contentType.match(ContentType.Application.Json) -> {
+                            println("Found JSON")
+                            val requestBody = call.receive<String>()
+                            println("Request Body: $requestBody")
+                            try {
+                                Json.decodeFromString<SignUpRequest>(requestBody)
+                            } catch (e: UnsupportedMediaTypeException) {
+                                println("Unsupported media type for JSON: ${e.message}")
+                                null
+                            } catch (e: Throwable) {
+                                println("Error parsing JSON request: ${e.message}")
+                                null
+                            }
+                        }
+                    contentType.match(ContentType.MultiPart.FormData) -> {
+                        println("Found form data parameters")
+                        val params = call.receiveParameters()
+                        SignUpRequest(
+                            email = params["email"] ?: "",
+                            userType = params["user_type"] ?: "",
+                            password = params["password"] ?: ""
+                        )
                     }
-                }
-                contentType.match(ContentType.MultiPart.FormData) -> {
-                    println("Found form data parameters")
-                    val params = call.receiveParameters()
-                    SignUpRequest(
-                        email = params["email"] ?: "",
-                        userType = params["user_type"] ?: "",
-                        password = params["password"] ?: ""
-                    )
-                }
-                else -> null
+                    else -> null
             }
 
             println("Sign Up Request: $signUpRequest")
@@ -94,7 +100,8 @@ fun Application.configureRouting() {
                 call.respondText(Json.encodeToString(response))
             } else {
                 if (!userEmail.matches(Regex(
-                        "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\$"))) {
+                        "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\$"))
+                    ) {
                     val response = Response("Invalid email")
                     println("Invalid email")
                     call.response.status(HttpStatusCode.Forbidden)
@@ -644,7 +651,7 @@ fun Application.configureRouting() {
                 val userAddress = transaction {
                     UserProfile.select { UserProfile.email eq username }
                         .map { it[UserProfile.address] }
-                        .singleOrNull() ?: "123 Address Lane"
+                        .singleOrNull() ?: ""
                 }
                 val order = Order(maxOrderId + 1,
                     username,
@@ -709,9 +716,8 @@ fun Application.configureRouting() {
                     }.firstOrNull()?.get(ApiUser.userType) ?: ""
                 }
 
-                if (role != "staff") {
-                    val response = Response("Access denied")
-                    call.respond(HttpStatusCode.Forbidden, Json.encodeToString(response))
+                if (role.toLowerCasePreservingASCIIRules() != "staff") {
+                    call.respond(HttpStatusCode.Forbidden, Json.encodeToString(Response("Access denied")))
                     return@post
                 }
                 val orderId = call.parameters["orderId"]!!
@@ -733,7 +739,6 @@ fun Application.configureRouting() {
         }
     }
     TransactionManager.currentOrNull()?.connection?.close()
-
 }
 
 @Serializable

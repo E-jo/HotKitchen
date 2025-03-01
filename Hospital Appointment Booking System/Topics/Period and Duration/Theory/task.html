@@ -1,0 +1,138 @@
+<div class="step-text">
+<p>In this topic, you will discover the  <code class="language-java">Period</code> class representing a <strong>date-based </strong>unit and the <code class="language-java">Duration</code> class representing a <strong>time-based </strong>unit. Both of them belong to the <code class="language-java">java.time</code><strong> </strong>package. You will learn how to create its instances in various ways using static methods. You will also learn about some important methods allowing us to perform operations with these classes.</p>
+<h5 id="creating-period-units">Creating Period units</h5>
+<p>The <code class="language-java">Period</code> class represents a period of time by <strong>years</strong>, <strong>months,</strong> and <strong>days</strong>. If the unit includes all metrics, its unit format is <code class="language-java">P{year}Y{month}M{day}D</code>, where <code class="language-java">{year}</code>, <code class="language-java">{month}</code> and <code class="language-java">{day}</code> are placeholders for values. Let's take a look at a few methods for creating <code class="language-java">Period</code> units:</p>
+<ul>
+<li>
+<p>The first and probably the most common way of creating <code class="language-java">Period</code> units is by using the <code class="language-java">of()</code> static method.</p>
+</li>
+</ul>
+<pre><code class="language-java">Period period = Period.of(1995, 5, 23);
+System.out.println(period); // P1995Y5M23D</code></pre>
+<ul>
+<li>
+<p>The next method allows us to get a <code class="language-java">Period</code> unit in the form of a difference between two dates:</p>
+</li>
+</ul>
+<pre><code class="language-java">LocalDate startDate = LocalDate.of(1995, 5, 23);
+LocalDate endDate = LocalDate.of(1995 , 8, 25);
+Period period = Period.between(startDate, endDate);
+
+System.out.println(period); // P3M2D</code></pre>
+<p>It will show negative values if the second argument is smaller, zero if they are equal, and a positive value if the second argument is larger.</p>
+<ul>
+<li>
+<p>Another method accepts a text and parses it to a <code class="language-java">Period</code><strong> </strong>type.</p>
+</li>
+</ul>
+<pre><code class="language-java">// 23 days
+System.out.println(Period.parse("P23D")); // P23D
+// 5 months 23 days
+System.out.println(Period.parse("P5M23D")); // P5M23D
+// -1995 years 5 months 23 days
+System.out.println(Period.parse("P-1995Y5M23D")); // P-1995Y5M23D
+</code></pre>
+<p>The same logic works for negative values. Here is a pattern you can use to mention that values are negative:</p>
+<pre><code class="language-java">// -23 days
+System.out.println(Period.parse("P-23D")); // P-23D
+// -5 months -23 days
+System.out.println(Period.parse("P-5M-23D")); // P-5M-23D
+// -1995 years -5 months -23 days
+System.out.println(Period.parse("P-1995Y-5M-23D")); // P-1995Y-5M-23D
+// -1995 years -5 months -23 days
+System.out.println(Period.parse("-P1995Y5M23D")); // P-1995Y-5M-23D</code></pre>
+<h5 id="extracting-period-units">Extracting Period units</h5>
+<p>Normally, if you print a full date of the <code class="language-java">Period</code> type it will look like the patterns we showed in the previous sections. This class also provides us with some methods that are helpful when you want to extract a single date unit from a full date.</p>
+<pre><code class="language-java">Period period  = Period.of(1995, 5, 23);
+
+System.out.println(period.getYears()); // 1995
+System.out.println(period.getMonths()); // 5
+System.out.println(period.getDays()); // 23</code></pre>
+<p>Another method that performs the same operation is the <code class="language-java">get()</code> method. If you have the same instance-level <code class="language-java">period</code> <a class="theory-lookup not-relevant" href="/learn/step/20783" target="_blank" title="In Java, a variable is a named storage location that is used to store a value of a specific type. | It is declared with a specific data type, which determines the kind of value that can be stored in it. Every variable has a unique name, also known as an identifier, which is used to access its value. Variables can be declared and initialized in a single statement, and their value can be accessed and modified using the name. It's important to note that variables can be changed, meaning you can assign a new value to a variable without having to declare it again.">variable</a> from the previous section, your code will look like this:</p>
+<pre><code class="language-java">public static void main(String[] args) {
+    Period period  = Period.of(1995, 5, 23);
+        
+    System.out.println(period.get(ChronoUnit.YEARS)); // 1995
+    System.out.println(period.get(ChronoUnit.MONTHS)); // 5
+    System.out.println(period.get(ChronoUnit.DAYS)); // 23
+}
+</code></pre>
+<p>Note that <code class="language-java">ChronoUnit</code> has fields for other units too, but the scope of this method only allows using the three of them mentioned above. If you use a unit such as <code class="language-java">ChronoUnit.WEEKS</code> or any other, you will face an <code class="language-java">UnsupportedTemporalTypeException</code>.</p>
+<h5 id="operating-with-period-units">Operating with Period units</h5>
+<p>Now let's explore two pairs of methods designed for <strong>adding</strong> and <strong>subtracting</strong> date-based units, namely:</p>
+<ul>
+<li>
+<p><code class="language-java">addTo()</code> and <code class="language-java">subtractFrom()</code></p>
+</li>
+<li>
+<p><code class="language-java">plus()</code> and <code class="language-java">minus()</code></p>
+</li>
+</ul>
+<p>These pairs of methods perform similar operations but behave differently. The code samples below show the difference. Let's start with the first pair, <code class="language-java">addTo()</code> and <code class="language-java">subtractFrom()</code>:</p>
+<pre><code class="language-java">Period period = Period.of(1, 1, 1);
+
+System.out.println(period.addTo(LocalDate.of(1995, 5, 23))); // 1996-06-24
+System.out.println(period.subtractFrom(LocalDate.of(1995, 5, 23))); // 1994-04-22
+System.out.println(period); // P1Y1M1D</code></pre>
+<p>This means that the methods aren't designed to work with two <code class="language-java">Period</code> units. With their help, you will add or subtract a period to/from a <code class="language-java">Temporal</code> variable which is a base interface of several classes including <code class="language-java">LocalDate</code>, <code class="language-java">LocalDateTime</code>, <code class="language-java">ZonedDateTime</code>, and so on.<br/>
+On the other hand, the second pair <code class="language-java">plus()</code> and <code class="language-java">minus()</code>,  is designed to operate with two <code class="language-java">Period</code> type variables.</p>
+<pre><code class="language-java">Period period = Period.of(1, 1, 1);
+
+System.out.println(period.plus(Period.of(1995, 5, 23))); // P1996Y6M24D
+System.out.println(period.minus(Period.of(1995, 5, 23))); // P-1994Y-4M-22D
+System.out.println(period); // P1Y1M1D</code></pre>
+<p>As you can see, we have a completely different result when subtracting. The <code class="language-java">subtractFrom()</code> method subtracts a <code class="language-java">period</code> variable from a <code class="language-java">LocalDate</code> while the <code class="language-java">minus()</code> subtracts the second <code class="language-java">Period</code> unit from the first one. </p>
+<h5 id="creating-duration-units">Creating Duration units</h5>
+<p><code class="language-java">Duration</code> represents a period of time storing the value in <strong>seconds</strong> and <strong>nanoseconds</strong>. Its structure has a lot in common with the <code class="language-java">Period</code> class. They have similar methods that have similar roles. Units of this class are created in the same way as the units of <code class="language-java">Period</code> and have a similar unit format <code class="language-java">PT{hour}H{minute}M{second}S</code> when the unit includes all metrics. We will consider the same four methods used when creating <code class="language-java">Period</code> units. First of all, let's explore the <code class="language-java">of()</code><strong> </strong>method. </p>
+<pre><code class="language-java">Duration durationOf = Duration.of(3, ChronoUnit.DAYS);
+Duration durationOf1 = Duration.of(3, ChronoUnit.MINUTES);
+Duration durationOf2 = Duration.of(3, ChronoUnit.NANOS);
+        
+System.out.println(durationOf); // PT72H
+System.out.println(durationOf1); // PT3M
+System.out.println(durationOf2); // PT0.000000003S</code></pre>
+<p>Here this method has a slightly different behavior. It accepts two arguments specifying the <strong>amount</strong> and the <strong>time unit</strong>. The first parameter doesn't need an explanation, but you should be aware of an important limitation regarding the second one. Although <code class="language-java">ChronoUnit</code> provides us with many units of time, here we can only use <strong>accurate</strong> units and <strong>days</strong>, which are counted as 24 hours (although the actual duration of a day is a bit longer). All unsupported units will cause an <code class="language-java">UnsupportedTemporalTypeException</code>. The other two methods behave no differently from the same methods of the <code class="language-java">Period</code> class. Here you see the <code class="language-java">between()</code> method:</p>
+<pre><code class="language-java">LocalTime startTime = LocalTime.of(11, 45, 30);
+LocalTime endTime = LocalTime.of(12, 50, 30);
+ 
+System.out.println(Duration.between(startTime, endTime)); // PT1H5M</code></pre>
+<p>The <code class="language-java">parse()</code> method also performs in the same way:</p>
+<pre><code class="language-java">Duration duration1 = Duration.parse("PT1H20M");
+Duration duration2 = Duration.parse("PT30M");
+
+System.out.println(duration1); // PT1H20M
+System.out.println(duration2); // PT30M</code></pre>
+<h5 id="extracting-duration-units">Extracting Duration units</h5>
+<p>Unlike the <code class="language-java">Period</code> class, there are fewer methods here to extract the desired unit from a <code class="language-java">Duration</code> instance:</p>
+<pre><code class="language-java">System.out.println(Duration.of(1, ChronoUnit.DAYS).getSeconds()); // 86400
+System.out.println(Duration.of(1, ChronoUnit.HOURS).getSeconds()); // 3600
+System.out.println(Duration.of(90, ChronoUnit.MINUTES).getSeconds()); // 5400
+System.out.println(Duration.of(90, ChronoUnit.SECONDS).getSeconds()); // 90
+System.out.println(Duration.of(90, ChronoUnit.SECONDS).getNano()); // 0
+System.out.println(Duration.of(90, ChronoUnit.NANOS).getNano()); // 90</code></pre>
+<p>It has two methods operating on specified units: <code class="language-java">getSeconds()</code> and <code class="language-java">getNano()</code>, each returning its component in a unit. So, if the unit contains both seconds and nanoseconds, <code class="language-java">getSeconds()</code> will return only seconds and the second one will return only nanoseconds.  </p>
+<pre><code class="language-java">Duration duration = Duration.ofSeconds(3675, 75);
+
+System.out.println(duration); // PT1H1M15.000000075S
+System.out.println(duration.getSeconds()); // 3675
+System.out.println(duration.getNano()); // 75</code></pre>
+<p> Also, you can use the <code class="language-java">get()</code> method if you don't want to specify the unit explicitly but pass the required unit as an argument when calling it:</p>
+<pre><code class="language-java">Duration duration = Duration.of(10, ChronoUnit.MINUTES);
+System.out.println(duration.get(ChronoUnit.SECONDS)); // 600</code></pre>
+<p> Like the similar method from the <code class="language-java">Period</code> class, it will throw an exception if you pass an unsupported unit.</p>
+<h5 id="operating-with-duration-units">Operating with Duration units</h5>
+<p>The <code class="language-java">Duration</code> class provides the same methods for adding and subtracting its units. </p>
+<pre><code class="language-java">Duration duration = Duration.of(90, ChronoUnit.MINUTES);
+
+System.out.println(duration.addTo(LocalTime.of(19, 5, 23))); // 20:35:23
+System.out.println(duration.subtractFrom(LocalTime.of(19, 5, 23))); // 17:35:23
+System.out.println(duration); // PT1H30M</code></pre>
+<p>If you take a closer look at the two code samples in this section and their results, you will see that the methods operate similarly to their <code class="language-java">Period</code> equivalents.</p>
+<pre><code class="language-java">Duration duration = Duration.of(90, ChronoUnit.MINUTES);
+
+System.out.println(duration.plus(Duration.of(10, ChronoUnit.MINUTES))); // PT1H40M
+System.out.println(duration.minus(Duration.of(10, ChronoUnit.MINUTES))); // PT1H20M
+System.out.println(duration); // PT1H30M</code></pre>
+<h5 id="conclusion">Conclusion</h5>
+<p>This topic aims to help you get the idea of the <code class="language-java">Period</code> and <code class="language-java">Duration</code> classes and their methods. Of course, these classes have other methods we didn't include in the topic, but the knowledge gained here is enough for you to continue exploring them on your own. Here is what we suggest: explore the classes, find a method not covered by this topic, and share your code with an explanation in the comments section. Good luck on your journey! </p>
+</div>
